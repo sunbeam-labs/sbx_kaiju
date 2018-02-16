@@ -1,0 +1,5 @@
+sbx_kaiju:
+  nodes_fp:
+  names_fp:
+  db_fp:
+  threads: 12

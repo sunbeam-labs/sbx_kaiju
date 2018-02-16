@@ -1,0 +1,35 @@
+rule kaiju_classify:
+    input:
+        r1 = str(QC_FP/'decontam'/'{sample}_R1.fastq.gz'),
+        r2 = str(QC_FP/'decontam'/'{sample}_R2.fastq.gz')
+    output:
+        temp(str(CLASSIFY_FP/'kaiju'/'raw'/'{sample}-raw.tsv'))
+    threads: Cfg['sbx_kaiju']['db_fp']
+    params:
+        nodes = Cfg['sbx_kaiju']['nodes_fp'],
+        db = Cfg['sbx_kaiju']['db_fp']
+    shell:
+        """
+        kaiju -t {params.nodes} -f {params.db} -z {threads} \
+        -i {input.r1} -j {input.r2} -o {output}
+        """
+
+rule kaiju_add_taxonomy:
+    input: rules.kaiju_classify.output
+    output:
+        str(CLASSIFY_FP/'kaiju'/'{sample}-taxa.tsv')
+    params:
+        nodes = Cfg['sbx_kaiju']['nodes_fp'],
+        names = Cfg['sbx_kaiju']['names_fp']
+    shell:
+        """
+        addTaxonNames -t {params.nodes} -n {params.names} -i {input} |\
+        cut -f3,4 | sort -k1 | uniq -c > {output}
+        """
+
+rule all_kaiju:
+    input: expand(
+        str(CLASSIFY_FP/'kaiju'/'{sample}-taxa.tsv'),
+        sample=Samples.keys())
+        
+        
