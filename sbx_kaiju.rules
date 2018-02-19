@@ -1,35 +1,92 @@
+from pathlib import Path
+import numpy as np
+from biom.table import Table
+
+def kaiju_to_biom(kaiju_outputs):
+    taxa = dict()
+    counts = dict()
+    for ko in kaiju_outputs:
+        sample = Path(ko).stem
+        counts[sample] = dict()
+        with open(ko) as infile:
+            for line in infile:
+                count, tax_id = line.strip().split(' ', 1)
+                tax_id, *tax_str = tax_id.split("\t")
+                if tax_str:
+                    taxa[tax_id] = tax_str[0].split("; ")
+                else:
+                    taxa[tax_id] = []
+                counts[sample][tax_id] = count
+    samples = sorted(counts.keys())
+    taxids = sorted(taxa.keys())
+    obs_metadata = [{'taxonomy': taxa[t]} for t in taxids]
+    data = np.zeros((len(taxids), len(samples)))
+    for i, sample in enumerate(samples):
+        for j, taxid in enumerate(taxids):
+            data[j,i] = counts[sample].get(taxid, 0)
+    return Table(
+        data, taxids, samples, observation_metadata=obs_metadata,
+        generated_by = "sbx_kaiju")
+
+
 rule kaiju_classify:
     input:
         r1 = str(QC_FP/'decontam'/'{sample}_R1.fastq.gz'),
         r2 = str(QC_FP/'decontam'/'{sample}_R2.fastq.gz')
     output:
         temp(str(CLASSIFY_FP/'kaiju'/'raw'/'{sample}-raw.tsv'))
-    threads: Cfg['sbx_kaiju']['db_fp']
+    threads: Cfg['sbx_kaiju']['threads']
     params:
         nodes = Cfg['sbx_kaiju']['nodes_fp'],
         db = Cfg['sbx_kaiju']['db_fp']
     shell:
         """
         kaiju -t {params.nodes} -f {params.db} -z {threads} \
-        -i {input.r1} -j {input.r2} -o {output}
+        -a greedy -e 5 \
+        -i <(gzip -cd {input.r1}) -j <(gzip -cd {input.r2}) -o {output}
         """
 
 rule kaiju_add_taxonomy:
     input: rules.kaiju_classify.output
     output:
-        str(CLASSIFY_FP/'kaiju'/'{sample}-taxa.tsv')
+        str(CLASSIFY_FP/'kaiju'/'taxa'/'{sample}.tsv')
     params:
         nodes = Cfg['sbx_kaiju']['nodes_fp'],
         names = Cfg['sbx_kaiju']['names_fp']
     shell:
         """
-        addTaxonNames -t {params.nodes} -n {params.names} -i {input} |\
+        addTaxonNames -t {params.nodes} -n {params.names} -i {input} \
+        -r kingdom,phylum,class,order,family,genus,species |\
         cut -f3,4 | sort -k1 | uniq -c > {output}
         """
 
+rule kaiju_to_biom:
+    input:
+        files = expand(
+            str(CLASSIFY_FP/'kaiju'/'taxa'/'{sample}.tsv'),
+            sample=Samples.keys())
+    output:
+        str(CLASSIFY_FP/'kaiju'/'all_samples.biom')
+    run:
+        t = kaiju_to_biom(input.files)
+        with open(output[0], 'w') as out:
+            t.to_json(t.generated_by, direct_io=out)
+
+rule kaiju_classic_biom:
+    input:
+        str(CLASSIFY_FP/'kaiju'/'all_samples.biom')
+    output:
+        str(CLASSIFY_FP/'kaiju'/'all_samples.tsv')
+    shell:
+        """
+        biom convert -i {input} -o {output} \
+        --to-tsv --header-key=taxonomy --process-obs-metadata=taxonomy \
+        --output-metadata-id="Consensus Lineage"
+        """
+
+          
 rule all_kaiju:
-    input: expand(
-        str(CLASSIFY_FP/'kaiju'/'{sample}-taxa.tsv'),
-        sample=Samples.keys())
+    input:
+        rules.kaiju_to_biom.output
         
         
