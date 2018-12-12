@@ -19,6 +19,16 @@ With your sunbeam conda environment activated,
     cat sunbeam/extensions/sbx_kaiju/config.yml >> my_config.yml
     ```
 
+## Setting up databases
+
+For help building Kaiju databases, see the [Kaiju github repo](https://github.com/bioinformatics-centre/kaiju). To build a database with RefSeq bacteria, viruses, and archea, use the following command:
+
+    ```shell
+    makeDB.sh -r -p
+    ```
+
+Make sure to edit your config file to set the `nodes_fp`, `names_fp`, and `db_fp` for your shiny new database!
+
 ## Usage
 
 This adds a new rule, `all_kaiju`. Specify this as your target to use Kaiju to classify your decontaminated samples.
