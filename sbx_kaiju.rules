@@ -31,8 +31,8 @@ def kaiju_to_biom(kaiju_outputs):
 
 rule kaiju_classify:
     input:
-        r1 = str(QC_FP/'decontam'/'{sample}_R1.fastq.gz'),
-        r2 = str(QC_FP/'decontam'/'{sample}_R2.fastq.gz')
+        r1 = str(QC_FP/'decontam'/'{sample}_1.fastq.gz'),
+        r2 = str(QC_FP/'decontam'/'{sample}_2.fastq.gz')
     output:
         temp(str(CLASSIFY_FP/'kaiju'/'raw'/'{sample}-raw.tsv'))
     threads: Cfg['sbx_kaiju']['threads']
