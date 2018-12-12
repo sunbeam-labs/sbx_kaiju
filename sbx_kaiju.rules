@@ -37,8 +37,8 @@ rule kaiju_classify:
         temp(str(CLASSIFY_FP/'kaiju'/'raw'/'{sample}-raw.tsv'))
     threads: Cfg['sbx_kaiju']['threads']
     params:
-        nodes = Cfg['sbx_kaiju']['nodes_fp'],
-        db = Cfg['sbx_kaiju']['db_fp']
+        nodes = str(Cfg['sbx_kaiju']['nodes_fp']),
+        db = str(Cfg['sbx_kaiju']['db_fp'])
     shell:
         """
         kaiju -t {params.nodes} -f {params.db} -z {threads} \
@@ -51,8 +51,8 @@ rule kaiju_add_taxonomy:
     output:
         str(CLASSIFY_FP/'kaiju'/'taxa'/'{sample}.tsv')
     params:
-        nodes = Cfg['sbx_kaiju']['nodes_fp'],
-        names = Cfg['sbx_kaiju']['names_fp']
+        nodes = str(Cfg['sbx_kaiju']['nodes_fp']),
+        names = str(Cfg['sbx_kaiju']['names_fp'])
     shell:
         """
         addTaxonNames -t {params.nodes} -n {params.names} -i {input} \
@@ -88,5 +88,3 @@ rule kaiju_classic_biom:
 rule all_kaiju:
     input:
         rules.kaiju_to_biom.output
-        
-        
