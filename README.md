@@ -32,3 +32,9 @@ Make sure to edit your config file to set the `nodes_fp`, `names_fp`, and `db_fp
 ## Usage
 
 This adds a new rule, `all_kaiju`. Specify this as your target to use Kaiju to classify your decontaminated samples.
+
+You specify it like this:
+
+    ```
+    sunbeam run --configfile ~/path/to/sunbeam_config.yml --use-conda all_kaiju
+    ```
