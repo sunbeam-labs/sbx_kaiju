@@ -55,7 +55,7 @@ rule kaiju_add_taxonomy:
         names = str(Cfg['sbx_kaiju']['names_fp'])
     shell:
         """
-        addTaxonNames -t {params.nodes} -n {params.names} -i {input} \
+        kaiju-addTaxonNames -t {params.nodes} -n {params.names} -i {input} \
         -r kingdom,phylum,class,order,family,genus,species |\
         cut -f3,4 | sort -k1 | uniq -c > {output}
         """
