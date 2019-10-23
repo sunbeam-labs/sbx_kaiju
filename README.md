@@ -35,6 +35,5 @@ This adds a new rule, `all_kaiju`. Specify this as your target to use Kaiju to c
 
 You specify it like this:
 
-    ```
+
     sunbeam run --configfile ~/path/to/sunbeam_config.yml --use-conda all_kaiju
-    ```
